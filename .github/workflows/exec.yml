@@ -1,0 +1,23 @@
+name: exec
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ v-* ]
+
+jobs:
+  exec:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.2.2
+        bundler-cache: true
+    - name: Create dotenv
+      run: mv ./.env.example ./.env
+    - name: Chmod
+      run: chmod +x ./entrypoint.sh
+    - name: Run
+      run: ./entrypoint.sh
