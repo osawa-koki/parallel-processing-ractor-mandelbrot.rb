@@ -6,7 +6,7 @@ require 'pathname'
 
 Dotenv.load
 
-def simple_execute
+def single_thread_execute
   aspect_ratio = ENV['ASPECT_RATIO'].to_f
 
   filesize_width = ENV['FILESIZE_WIDTH'].to_i
