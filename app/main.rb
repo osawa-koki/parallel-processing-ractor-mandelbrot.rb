@@ -2,12 +2,12 @@
 
 require 'benchmark'
 
-require './app/simple'
+require './app/single_thread'
 require './app/multi_thread'
 
 Benchmark.bm 15 do |r|
-  r.report 'simple' do
-    simple_execute
+  r.report 'single_thread' do
+    single_thread_execute
   end
   r.report 'multi_thread' do
     multi_thread_execute
