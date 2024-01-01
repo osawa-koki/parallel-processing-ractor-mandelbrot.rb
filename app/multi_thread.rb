@@ -30,49 +30,46 @@ def multi_thread_execute
   # 画像の初期化
   png = ChunkyPNG::Image.new(filesize_width, filesize_height, ChunkyPNG::Color::BLACK)
 
-  thread_count = ENV['THREAD_COUNT'].to_i
+  thread_num = ENV['THREAD_NUM'].to_i
 
-  queue = Thread::Queue.new
+  thread_height = filesize_height / thread_num
 
-  (0...filesize_width).each do |x|
-    (0...filesize_height).each do |y|
-      queue.push([x, y])
-    end
-  end
+  ractors = []
 
-  threads = []
+  thread_num.times do |i|
+    ractors << Ractor.new(
+      i, thread_height, png, x_min, x_max, y_min, y_max, filesize_width, filesize_height, max_iterations
+    ) do
+        |i, thread_height, png, x_min, x_max, y_min, y_max, filesize_width, filesize_height, max_iterations| # rubocop:disable Metrics/ParameterLists
+      (i * thread_height..(i + 1) * thread_height - 1).each do |y|
+        (0..filesize_width - 1).each do |x|
+          # 座標の変換
+          zx = x_min + (x_max - x_min) * x / filesize_width
+          zy = y_min + (y_max - y_min) * y / filesize_height
 
-  thread_count.times do
-    threads << Thread.new do
-      until queue.empty?
-        x, y = queue.pop
+          # マンデルブロ集合の計算
+          z = 0.0
+          iteration = 0
+          while z.abs < 2 && iteration < max_iterations
+            z = z * z + Complex(zx, zy)
+            iteration += 1
+          end
 
-        # 座標の変換
-        zx = x_min + (x_max - x_min) * x / filesize_width
-        zy = y_min + (y_max - y_min) * y / filesize_height
+          # ピクセルの色を設定
+          color = if iteration == max_iterations
+                    ChunkyPNG::Color::WHITE
+                  else
+                    ChunkyPNG::Color.rgb(iteration * 10 % 256, iteration * 10 % 256, iteration * 10 % 256)
+                  end
 
-        # マンデルブロ集合の計算
-        z = 0.0
-        iteration = 0
-        while z.abs < 2 && iteration < max_iterations
-          z = z * z + Complex(zx, zy)
-          iteration += 1
+          # 画像に描画
+          png[x, y] = color
         end
-
-        # ピクセルの色を設定
-        color = if iteration == max_iterations
-                  ChunkyPNG::Color::WHITE
-                else
-                  ChunkyPNG::Color.rgb(iteration * 10 % 256, iteration * 10 % 256, iteration * 10 % 256)
-                end
-
-        # 画像に描画
-        png[x, y] = color
       end
     end
   end
 
-  threads.each(&:join)
+  ractors.each(&:take)
 
   # 画像を保存
   png.save(output_path, interlace: true)
