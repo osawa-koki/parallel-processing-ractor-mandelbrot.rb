@@ -3,7 +3,7 @@ name: ci
 on: [ push ]
 
 jobs:
-  cd:
+  ci:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
